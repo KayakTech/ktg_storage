@@ -11,5 +11,5 @@ class AttachmentAdmin(admin.ModelAdmin):
         "file_type",
         "upload_finished_at",
         "uploaded_by",
-        "s3_key",
+
     ]

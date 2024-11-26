@@ -102,4 +102,4 @@ class FinishFileUploadSerializer(serializers.Serializer):
 
 
 class CreatePresignedUrl(serializers.Serializer):
-    s3_key = serializers.CharField()
+    file_name = serializers.CharField()

@@ -66,7 +66,6 @@ class Storage(models.Model):
     upload_finished_at = models.DateTimeField(blank=True, null=True)
     expire_at = models.DateTimeField(blank=True, null=True)
     reminder = models.DateTimeField(blank=True, null=True)
-    s3_key = models.TextField(blank=True, editable=False)
 
     @property
     def is_valid(self):

@@ -181,9 +181,6 @@ class FileDirectUploadService:
                 "url": file_generate_local_upload_url(file_id=str(file.id)),
             }
 
-        file.s3_key = presigned_data.get('fields', {}).get('key')
-        file.save(update_fields=['s3_key'])
-
         return {
             "file": file,
             "presigned_data": presigned_data,

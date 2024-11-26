@@ -23,6 +23,7 @@ class GetAllFileView(ApiAuthMixin, ListAPIView):
     serializer_class = FileSerializer
 
     def get_queryset(self):
+
         return Storage.objects.get_user_files(self.request.user)
 
 
@@ -83,9 +84,9 @@ class CreatePresignedUrl(ApiAuthMixin, CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        s3_key = serializer.validated_data.get("s3_key")
+        file_name = serializer.validated_data.get("file_name")
 
         return Response(
-            data=create_presigned_url(object_name=s3_key),
+            data=create_presigned_url(object_name=file_name),
             status=status.HTTP_201_CREATED,
         )
