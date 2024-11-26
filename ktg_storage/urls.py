@@ -28,6 +28,6 @@ urlpatterns = [
     path("all/", GetAllFileView.as_view(), name="list"),
     path("files/<str:pk>/", FileUpdateView.as_view(), name="update"),
     path("expired-files/", ExpiredFileListView.as_view(), name="expired-files"),
-    path("create-presigned-url/", CreatePresignedUrl.as_view(),
+    path("generate-presigned-url/", CreatePresignedUrl.as_view(),
          name="create_presigned_url"),
 ]
