@@ -10,9 +10,9 @@ from rest_framework.generics import ListAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .client import create_presigned_url
-from .models import Storage
-from .services import FileDirectUploadService
+from ktg_storage.client import create_presigned_url
+from ktg_storage.models import Storage
+from ktg_storage.services import FileDirectUploadService
 
 
 class FileDirectUploadStartApi(ApiAuthMixin, CreateAPIView):

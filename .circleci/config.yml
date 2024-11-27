@@ -49,23 +49,6 @@ jobs:
             - ~/.cache/pip
           key: ktg_storage-{{ .Branch }}-{{ checksum "requirements.txt"}}
 
-      # Tests, style checks
-      # - run:
-      #     name: Check for code smells (prints, debugger)
-      #     command: scripts/check_code_smells.sh
-
-      # - run:
-      #     name: Run code style check
-      #     command: scripts/check_git_style.sh
-
-      # - run:
-      #     name: Check for conflicting migrations
-      #     command: scripts/check_migrations.sh
-
-      # - run:
-      #     name: Run tests
-      #     command: python manage.py test --verbosity=2
-
   build_docker_image:
     resource_class: medium
     machine:
@@ -90,10 +73,6 @@ jobs:
           name: Install dependencies
           command: |
             pip install awscli
-
-      # - deploy:
-      #     name: Deploy to ecs
-      #     command: ./scripts/deploy-ecs.sh $CIRCLE_BRANCH
 
   deploy_master:
     docker:

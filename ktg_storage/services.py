@@ -9,14 +9,14 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 from typing_extensions import TypedDict
-from .client import s3_generate_presigned_post
+from ktg_storage.client import s3_generate_presigned_post
 
-from .enums import FileUploadStorage
-from .models import Storage
-from .utils import bytes_to_mib
-from .utils import file_generate_local_upload_url
-from .utils import file_generate_name
-from .utils import file_generate_upload_path
+from ktg_storage.enums import FileUploadStorage
+from ktg_storage.models import Storage
+from ktg_storage.utils import bytes_to_mib
+from ktg_storage.utils import file_generate_local_upload_url
+from ktg_storage.utils import file_generate_name
+from ktg_storage.utils import file_generate_upload_path
 User = get_user_model()
 
 
