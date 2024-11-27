@@ -119,14 +119,6 @@ class StartFileUploadData(TypedDict):
 
 
 class FileDirectUploadService:
-    """
-    This also serves as an example of a service class,
-    which encapsulates a flow (start & finish) + one-off action (upload_local) into a namespace.
-
-    Meaning, we use the class here for:
-
-    1. The namespace
-    """
 
     class StorageValidatedData(TypedDict):
         file_name: str
