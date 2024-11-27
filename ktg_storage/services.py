@@ -25,9 +25,9 @@ def _validate_file_size(file_obj):
     max_size = settings.FILE_MAX_SIZE
 
     if file_obj.size > max_size:
-        message = "File is too large. It should not exceed {} MiB".format(
-            bytes_to_mib(max_size))
-        raise ValidationError(message)
+        # message = "File is too large. It should not exceed {} MiB".format(
+        #     bytes_to_mib(max_size))
+        raise ValidationError('File is too large')
 
 
 class FileStandardUploadService:
