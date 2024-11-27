@@ -1,0 +1,120 @@
+version: 2.1
+
+orbs:
+  jira: circleci/jira@1.3.1
+  browser-tools: circleci/browser-tools@1.2.5
+
+jobs:
+  build:
+    working_directory: ~/backend
+    environment:
+      AWS_ACCESS_KEY_ID: ab
+      AWS_SECRET_ACCESS_KEY: ELE8
+      AWS_STORAGE_BUCKET_NAME: "te"
+      AWS_S3_SIGNATURE_VERSION: "s3v4"
+      AWS_S3_REGION_NAME: "eu-west-3"
+      AWS_S3_CUSTOM_DOMAIN: tuulb
+      AWS_PRESIGNED_EXPIRY: "10"
+      FILE_UPLOAD_STORAGE: local
+      FILE_MAX_SIZE: "10485760"
+
+    docker:
+      - image: cimg/python:3.9.12
+        environment:
+          CIRCLE_ARTIFACTS: .artifacts
+          DATABASE_URL: postgresql://ubuntu@localhost/circle_test
+          ENVIRONMENT: circleci
+          PYTHONPATH: .
+
+      - image: cimg/postgres:14.0
+        environment:
+          POSTGRES_USER: "postgres"
+          POSTGRES_DB: "ktg_storage"
+          POSTGRES_PASSWORD: "postgres"
+      - image: cimg/redis:6.2.6
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - ktg_storage-{{ .Branch }}-{{ checksum "requirements.txt"}}
+      - run:
+          name: Install libraries
+          command: |
+            pip uninstall -y typing
+            pip install --upgrade -r requirements.txt
+      - save_cache:
+          paths:
+            - ~/.cache/pip
+          key: ktg_storage-{{ .Branch }}-{{ checksum "requirements.txt"}}
+
+      # Tests, style checks
+      # - run:
+      #     name: Check for code smells (prints, debugger)
+      #     command: scripts/check_code_smells.sh
+
+      # - run:
+      #     name: Run code style check
+      #     command: scripts/check_git_style.sh
+
+      # - run:
+      #     name: Check for conflicting migrations
+      #     command: scripts/check_migrations.sh
+
+      # - run:
+      #     name: Run tests
+      #     command: python manage.py test --verbosity=2
+
+  build_docker_image:
+    resource_class: medium
+    machine:
+      image: default
+    steps:
+      - checkout
+
+  deploy:
+    docker:
+      - image: cimg/python:3.10
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - ktg_storage-{{ .Branch }}-{{ checksum "requirements.txt"}}
+            - ktg_storage-{{ .Branch }}
+            - ktg_storage
+
+      - run:
+          name: Install dependencies
+          command: |
+            pip install awscli
+
+      # - deploy:
+      #     name: Deploy to ecs
+      #     command: ./scripts/deploy-ecs.sh $CIRCLE_BRANCH
+
+  deploy_master:
+    docker:
+      - image: arvindr226/alpine-ssh
+    steps:
+      - checkout
+      - add_ssh_keys: # add private SSH key from CircleCI account based on fingerprint.
+          fingerprints:
+            - "SHA256:TTR5XzDca88TJC8srfby+kO++wdI/slTXvE0dcf7eBU"
+      # - run: bash ./scripts/deploy_master.sh
+
+workflows:
+  test_and_deploy:
+    jobs:
+      - build
+
+      - deploy_master:
+          name: deploy
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - master
