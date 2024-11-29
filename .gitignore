@@ -11,6 +11,8 @@ db.sqlite3
 # Distribution / packaging
 .Python
 db.sqlite3
+manage.py
+/manage.py
 build/
 /settings
 settings
@@ -158,3 +160,4 @@ media
 
 .DS_Store
 test_sdk.py
+manage.py
