@@ -1,22 +1,19 @@
-# tests.py
 
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 from ktg_storage.models import Storage
-from .factories import StorageFactory, UserFactory
+from ktg_storage.factories import StorageFactory, UserFactory
 from django.urls import reverse
 from django.utils import timezone
 
 
 class StorageApiTests(TestCase):
     def setUp(self):
-        # Create a user and authenticate
         self.user = UserFactory.create()
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
-        # Create storage files for the user
         self.file1 = StorageFactory.create(uploaded_by=self.user)
         self.file2 = StorageFactory.create(
             uploaded_by=self.user, expire_at=timezone.now() - timezone.timedelta(days=1))
@@ -28,10 +25,8 @@ class StorageApiTests(TestCase):
 
         files = response.json()
 
-        # Ensure that the response has the correct number of files
         self.assertEqual(len(files), 2)
 
-        # Assert that the user only gets their own files
         self.assertEqual(str(files[0]["uploaded_by"][0]["id"]), str(
             self.user.id))
         self.assertEqual(str(files[1]["uploaded_by"][0]["id"]), str(
@@ -42,7 +37,6 @@ class StorageApiTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Assert that only the expired file appears
         files = response.json()
         self.assertEqual(len(files), 2)
         self.assertEqual(files[0]["id"], str(self.file2.id))
@@ -56,7 +50,6 @@ class StorageApiTests(TestCase):
         response = self.client.patch(url, new_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Check if the file was updated correctly
         updated_file = Storage.objects.get(id=self.file1.id)
         self.assertEqual(updated_file.expire_at.date(),
                          (timezone.now() + timezone.timedelta(days=2)).date())
@@ -88,7 +81,6 @@ class StorageApiTests(TestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        # Check that the response contains the presigned upload data
         self.assertIn("file", response.json())
         self.assertIn("presigned_data", response.json())
 
@@ -101,6 +93,5 @@ class StorageApiTests(TestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        # Check if the file upload is finished
         file = Storage.objects.get(id=self.file1.id)
         self.assertIsNotNone(file.upload_finished_at)

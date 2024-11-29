@@ -7,6 +7,9 @@ __pycache__/
 # C extensions
 *.so
 db.sqlite3
+files
+/files
+files/
 .sqlite3
 # Distribution / packaging
 .Python
