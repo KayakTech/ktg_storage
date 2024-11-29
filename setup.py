@@ -24,7 +24,6 @@ setup(
         'PyYAML==6.0.2',
         's3transfer==0.6.2',
         'setuptools==75.4.0',
-        'six==1.16.0',
         'sqlparse==0.5.1',
         'typing_extensions==4.12.2',
         'uritemplate==4.1.1',
