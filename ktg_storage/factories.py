@@ -1,4 +1,4 @@
-# factories.py
+
 
 import factory
 from ktg_storage.models import Storage
