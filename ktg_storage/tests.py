@@ -13,7 +13,6 @@ class StorageApiTests(TestCase):
         self.user = UserFactory.create()
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
-
         self.file1 = StorageFactory.create(uploaded_by=self.user)
         self.file2 = StorageFactory.create(
             uploaded_by=self.user, expire_at=timezone.now() - timezone.timedelta(days=1))
