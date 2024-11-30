@@ -1,6 +1,5 @@
 from ktg_storage.enums import FileUploadStorage
 from ktg_storage.utils import file_generate_upload_path
-from ktg_storage.storage_backends import get_private_storage_class
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -54,9 +53,8 @@ class Storage(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     objects: FileManger = FileManger()
-    attachment = models.FileField(
+    file = models.FileField(
         upload_to=file_generate_upload_path, blank=True, null=True,
-        storage=get_private_storage_class,
     )
 
     original_file_name = models.TextField()

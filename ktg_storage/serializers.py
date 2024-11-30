@@ -25,7 +25,6 @@ class FileSerializer(serializers.ModelSerializer):
         model = Storage
         exclude = (
             "is_deleted",
-            "attachment",
         )
         read_only_fields = (
             "id",
@@ -49,9 +48,9 @@ class FileSerializer(serializers.ModelSerializer):
 
     def get_file(self, obj: Storage):
         if settings.IS_USING_LOCAL_STORAGE:
-            return obj.attachment.url if obj.attachment else None
+            return obj.file.url if obj.file else None
 
-        return create_presigned_url(obj.attachment.name)
+        return create_presigned_url(obj.file.name)
 
 
 class StartDirectFileUploadSerializer(serializers.Serializer):

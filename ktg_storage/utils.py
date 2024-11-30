@@ -15,7 +15,7 @@ def file_generate_name(original_file_name):
 
 
 def file_generate_upload_path(instance: "Storage", filename):
-    return f"{instance.attachment.storage.location}files/{instance.file_name}"
+    return f"files/{instance.file_name}"
 
 
 def file_generate_local_upload_url(*, file_id: str):

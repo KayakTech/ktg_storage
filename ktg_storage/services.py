@@ -99,7 +99,7 @@ class FileStandardUploadService:
             file_name, file_type
         )
 
-        file.attachment = self.file_obj
+        file.file = self.file_obj
         file.original_file_name = file_name
         file.file_name = file_generate_name(file_name)
         file.file_type = file_type
@@ -134,14 +134,14 @@ class FileDirectUploadService:
     @transaction.atomic
     def start(self, data: StorageValidatedData) -> StartFileUploadData:
 
-        file = Storage(
+        file: Storage = Storage(
             original_file_name=data["file_name"],
             file_name=file_generate_name(data["file_name"]),
             file_type=data["file_type"],
             uploaded_by=data.get("user", None),
             expire_at=data.get("expire_at"),
             reminder=data.get("reminder"),
-            attachment=None,
+            file=None,
         )
 
         file.full_clean()
@@ -152,8 +152,8 @@ class FileDirectUploadService:
         """
         We are doing this in order to have an associated file for the field.
         """
-        file.attachment = file.attachment.field.attr_class(
-            file, file.attachment.field, upload_path
+        file.file = file.file.field.attr_class(
+            file, file.file.field, upload_path
         )
         file.save()
 
@@ -168,6 +168,7 @@ class FileDirectUploadService:
             )
 
         else:
+
             presigned_data = {
                 "url": file_generate_local_upload_url(file_id=str(file.id)),
             }
@@ -181,6 +182,7 @@ class FileDirectUploadService:
     def finish(self, *, file: Storage) -> Storage:
         # Potentially, check against user
         file.upload_finished_at = timezone.now()
+
         file.full_clean()
         file.save()
 
@@ -191,7 +193,7 @@ class FileDirectUploadService:
         _validate_file_size(file_obj)
 
         # Potentially, check against user
-        file.attachment = file_obj
+        file.file = file_obj
         file.full_clean()
         file.save()
 
