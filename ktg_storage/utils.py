@@ -1,8 +1,11 @@
 import pathlib
 from uuid import uuid4
+import typing
 
 from django.conf import settings
 from django.urls import reverse
+if typing.TYPE_CHECKING:
+    from ktg_storage.models import Storage
 
 
 def file_generate_name(original_file_name):
@@ -11,8 +14,8 @@ def file_generate_name(original_file_name):
     return f"{uuid4().hex}{extension}"
 
 
-def file_generate_upload_path(instance, filename):
-    return f"files/{instance.file_name}"
+def file_generate_upload_path(instance: "Storage", filename):
+    return f"{instance.attachment.storage.location}files/{instance.file_name}"
 
 
 def file_generate_local_upload_url(*, file_id: str):
