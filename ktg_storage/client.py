@@ -63,6 +63,7 @@ def s3_get_credentials() -> S3Credentials:
             "ALLOW_AUTHENTICATION",
             "APP_DOMAIN",
             "IS_USING_LOCAL_STORAGE",
+            "MEDIA_LOCATION"
         ],
         "S3 credentials not found.",
     )
