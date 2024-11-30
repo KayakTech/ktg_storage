@@ -12,7 +12,7 @@ def file_generate_name(original_file_name):
 
 
 def file_generate_upload_path(instance, filename):
-    return f"{settings.MEDIA_LOCATION}{instance.file_name}"
+    return f"{settings.MEDIA_LOCATION}/{instance.file_name}"
 
 
 def file_generate_local_upload_url(*, file_id: str):
