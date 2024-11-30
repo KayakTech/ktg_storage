@@ -28,6 +28,7 @@ setup(
         'typing_extensions==4.12.2',
         'uritemplate==4.1.1',
         'urllib3==1.26.20',
+        "django-storages==1.14.4",
     ],
     description='A reusable Django app for managing storage functionality',
 
