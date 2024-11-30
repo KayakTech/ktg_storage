@@ -27,4 +27,4 @@ class StorageFactory(factory.django.DjangoModelFactory):
     upload_finished_at = factory.LazyFunction(timezone.now)
     expire_at = factory.LazyFunction(timezone.now)
     reminder = factory.LazyFunction(timezone.now)
-    attachment = factory.django.FileField(filename="test_file.txt")
+    file = factory.django.FileField(filename="test_file.txt")
