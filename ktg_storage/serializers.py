@@ -4,7 +4,6 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from typing_extensions import TypedDict
 from ktg_storage.client import s3_service
-from django.contrib.auth import get_user_model
 
 from ktg_storage.models import Storage
 
@@ -33,6 +32,8 @@ class FileSerializer(serializers.ModelSerializer):
         )
 
     def get_uploaded_by(self, obj: Storage):
+        from django.contrib.auth import get_user_model
+
         if not obj.uploaded_by:
             return
         return get_user_model().objects.filter(id=obj.uploaded_by.id).values()

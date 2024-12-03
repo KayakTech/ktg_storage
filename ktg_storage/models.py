@@ -2,9 +2,9 @@ from ktg_storage.utils import file_generate_upload_path
 from django.db import models
 from django.utils import timezone
 import uuid
-from django.contrib.auth import get_user_model
 from ktg_storage.client import s3_service
 from typing import Optional
+from django.conf import settings
 
 
 class FileManger(models.Manager):
@@ -63,7 +63,7 @@ class Storage(models.Model):
     file_name = models.CharField(max_length=255, unique=True)
     file_type = models.CharField(max_length=255)
     uploaded_by = models.ForeignKey(
-        get_user_model(), null=True, blank=True, on_delete=models.SET_NULL)
+        settings.AUTH_USER_MODEL,  null=True, blank=True, on_delete=models.SET_NULL)
     upload_finished_at = models.DateTimeField(blank=True, null=True)
     expire_at = models.DateTimeField(blank=True, null=True)
     reminder = models.DateTimeField(blank=True, null=True)

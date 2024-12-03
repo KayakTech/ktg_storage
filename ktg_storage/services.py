@@ -4,7 +4,6 @@ from typing import Dict
 from typing import Tuple
 from PIL import Image
 
-from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -26,7 +25,6 @@ import random
 import tempfile
 from io import BytesIO
 from typing import Optional
-User = get_user_model()
 
 
 def _validate_file_size(file_obj):
