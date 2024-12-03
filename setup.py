@@ -29,6 +29,9 @@ setup(
         'uritemplate==4.1.1',
         'urllib3==1.26.20',
         "django-storages==1.14.4",
+        "moviepy==1.0.3",
+        "pillow==11.0.0",
+        "PyMuPDF==1.24.14",
     ],
     description='A reusable Django app for managing storage functionality',
 
