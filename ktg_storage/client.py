@@ -1,12 +1,14 @@
+from typing import Dict
+from typing import Any
+from typing import Optional
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
-from io import BytesIO
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from io import BytesIO
 
 
 def assert_settings(required_settings, error_message_prefix=""):
@@ -76,239 +78,215 @@ def s3_get_credentials() -> S3Credentials:
     )
 
 
-def s3_get_client():
-    credentials = s3_get_credentials()
-
+def get_s3_client():
     return boto3.client(
         service_name="s3",
-        aws_access_key_id=credentials.access_key_id,
-        aws_secret_access_key=credentials.secret_access_key,
-        region_name=credentials.region_name,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_S3_REGION_NAME,
+        config=Config(s3={"addressing_style": "path"},
+                      signature_version="s3v4"),
     )
 
 
-def s3_resource_client():
-    credentials = s3_get_credentials()
-
+def get_s3_resource():
     return boto3.resource(
         service_name="s3",
-        aws_access_key_id=credentials.access_key_id,
-        aws_secret_access_key=credentials.secret_access_key,
-        region_name=credentials.region_name,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_S3_REGION_NAME,
     )
 
 
-def s3_generate_presigned_post(
-    *, file_path: str, file_type: str
-) -> Dict[str, Any]:
-    credentials = s3_get_credentials()
-    s3_client = s3_get_client()
+class S3Service:
+    def __init__(self):
+        self.client = get_s3_client()
+        self.bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+        self.acl = settings.AWS_DEFAULT_ACL
+        self.expiry = settings.AWS_PRESIGNED_EXPIRY
+        self.max_size = settings.FILE_MAX_SIZE
 
-    acl = credentials.default_acl
-    expires_in = credentials.presigned_expiry
-
-    presigned_data = s3_client.generate_presigned_post(
-        credentials.bucket_name,
-        file_path,
-        Fields={"acl": acl, "Content-Type": file_type},
-        Conditions=[
-            {"acl": acl},
-            {"Content-Type": file_type},
-            # As an example, allow file size up to 10 MiB
-            ["content-length-range", 1, credentials.max_size],
-        ],
-        ExpiresIn=expires_in,
-    )
-
-    return presigned_data
-
-
-def create_presigned_url(object_name, bucket_name=None):
-    """Generate a presigned URL to share an S3 object
-
-    :param object_name: string
-    :param expiration: Time in seconds for the presigned URL to remain valid
-    :return: Presigned URL as string. If error, returns None.
-    """
-    credentials = s3_get_credentials()
-
-    s3_client = boto3.client(
-        config=Config(
-            s3={"addressing_style": "path"}, signature_version="s3v4"
-        ),
-        service_name="s3",
-        aws_access_key_id=credentials.access_key_id,
-        aws_secret_access_key=credentials.secret_access_key,
-        region_name=credentials.region_name,
-    )
-
-    # Generate a presigned URL for the S3 object
-    params = {"Bucket": credentials.bucket_name, "Key": object_name}
-    try:
-        response = s3_client.generate_presigned_url(
-            "get_object",
-            Params=params,
-            ExpiresIn=credentials.presigned_expiry,
-        )
-    except ClientError as e:
-        logging.error(f"Error generating presigned URL: {e}")
-        return None
-    return response
-
-
-def upload_file(file_path: str, object_name: str) -> bool:
-    credentials = s3_get_credentials()
-    s3_client = s3_get_client()
-
-    try:
-        s3_client.upload_file(file_path, credentials.bucket_name, object_name)
-        logging.info(f"Uploaded {file_path} to {object_name}")
-        return True
-    except ClientError as e:
-        logging.error(f"Failed to upload {file_path} to {object_name}: {e}")
-        return False
-
-
-def get_file(object_name: str, download_path: Optional[str] = None) -> Optional[bytes]:
-    credentials = s3_get_credentials()
-    s3_client = s3_get_client()
-
-    try:
-        if download_path:
-            s3_client.download_file(
-                credentials.bucket_name, object_name, download_path)
-            logging.info(f"File downloaded to {download_path}")
-            return None
-        else:
-            obj = s3_client.get_object(
-                Bucket=credentials.bucket_name, Key=object_name)
-            return obj["Body"].read()
-    except ClientError as e:
-        logging.error(f"Failed to retrieve file {object_name} from S3: {e}")
-        return None
-
-
-def copy_file(source_object_name: str, destination_object_name: str) -> bool:
-    credentials = s3_get_credentials()
-    s3_client = s3_get_client()
-
-    copy_source = {"Bucket": credentials.bucket_name,
-                   "Key": source_object_name}
-    try:
-        s3_client.copy(copy_source, credentials.bucket_name,
-                       destination_object_name)
-        logging.info(f"Copied {source_object_name} to {
-                     destination_object_name}")
-        return True
-    except ClientError as e:
-        logging.error(f"Failed to copy file {source_object_name} to {
-                      destination_object_name}: {e}")
-        return False
-
-
-def delete_file(file_path: str) -> bool:
-    credentials = s3_get_credentials()
-    s3_client = s3_get_client()
-
-    try:
-        s3_client.delete_object(Bucket=credentials.bucket_name, Key=file_path)
-        logging.info(f"Deleted {file_path} from S3")
-        return True
-    except ClientError as e:
-        logging.error(f"Failed to delete file from S3: {e}")
-        return False
-
-
-def file_exists(key: str) -> bool:
-    credentials = s3_get_credentials()
-    s3_client = s3_get_client()
-
-    try:
-        s3_client.head_object(Bucket=credentials.bucket_name, Key=key)
-        return True
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "404":
-            return False
-        raise
-
-
-def get_file_size(key: str) -> int:
-    if not file_exists(key):
-        return 0
-
-    credentials = s3_get_credentials()
-    s3_client = s3_get_client()
-
-    try:
-        response = s3_client.head_object(
-            Bucket=credentials.bucket_name, Key=key)
-        return response["ContentLength"]
-    except ClientError as e:
-        logging.error(f"Error fetching file size for {key}: {e}")
-        raise
-
-
-def get_file_path(object_name: str) -> Optional[str]:
-    credentials = s3_get_credentials()
-
-    if file_exists(object_name):
-        return f"https://{credentials.bucket_name}.s3.amazonaws.com/{object_name}"
-    return None
-
-
-def get_file_content(object_name: str) -> Optional[bytes]:
-    credentials = s3_get_credentials()
-    s3_client = s3_get_client()
-
-    try:
-        response = s3_client.get_object(
-            Bucket=credentials.bucket_name, Key=object_name)
-        return response["Body"].read()
-    except ClientError as e:
-        logging.error(f"Failed to fetch file {object_name} from S3: {e}")
-        return None
-
-
-def upload_fileobj(fileobj: BytesIO, object_name: str, content_type: str) -> bool:
-    credentials = s3_get_credentials()
-    s3_client = s3_get_client()
-
-    try:
-        s3_client.upload_fileobj(
-            fileobj,
-            credentials.bucket_name,
-            object_name,
-            ExtraArgs={"ContentType": content_type,
-                       "ACL": credentials.default_acl},
-        )
-
-        logging.info(f"Uploaded file-like object to {object_name}")
-        return True
-    except ClientError as e:
-        logging.error(
-            f"Failed to upload file-like object to {object_name}: {e}")
-        return False
-
-
-def generate_url(object_name: str, has_expire: bool = True) -> str:
-    credentials = s3_get_credentials()
-    s3_client = s3_get_client()
-
-    if has_expire:
+    def generate_presigned_post(
+        self, *, file_path: str, file_type: str
+    ) -> Dict[str, Any]:
         try:
-            url = s3_client.generate_presigned_url(
-                'get_object',
-                Params={
-                    'Bucket': credentials.bucket_name,
-                    'Key': object_name
-                },
-                ExpiresIn=credentials.presigned_expiry)
-
-            return url
+            presigned_data = self.client.generate_presigned_post(
+                self.bucket_name,
+                file_path,
+                Fields={"acl": self.acl, "Content-Type": file_type},
+                Conditions=[
+                    {"acl": self.acl},
+                    {"Content-Type": file_type},
+                    ["content-length-range", 1, self.max_size],
+                ],
+                ExpiresIn=self.expiry,
+            )
+            return presigned_data
         except ClientError as e:
-            logging.error(f"Error generating presigned URL: {e}")
+            logging.error(f"Failed to generate presigned POST URL: {e}")
+            raise
+
+    def create_presigned_url(self, object_name: str, expires: bool = True) -> Optional[str]:
+
+        expires_in = self.expiry if expires else 0
+
+        try:
+            return self.client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.bucket_name, "Key": object_name},
+                ExpiresIn=expires_in,
+            )
+        except ClientError as e:
+            logging.error(f"Failed to generate presigned URL: {e}")
             return None
-    else:
-        # If has_expire is False, generate a public URL (no expiration)
-        public_url = f"https://{credentials.bucket_name}.s3.amazonaws.com/{object_name}"
-        return public_url
+
+    def get_file(
+        self, object_name: str, download_path: Optional[str] = None
+    ) -> Optional[bytes]:
+        try:
+            if download_path:
+                self.client.download_file(
+                    self.bucket_name, object_name, download_path)
+                logging.info(f"File downloaded to {download_path}")
+                return None
+            else:
+                obj = self.client.get_object(
+                    Bucket=self.bucket_name, Key=object_name)
+                return obj["Body"].read()
+        except ClientError as e:
+            logging.error(
+                "Failed to retrieve file %s from S3: %s",
+                object_name,
+                e.response["Error"]["Message"],
+            )
+
+            return None
+
+    def copy_file(self, source_object_name: str, destination_object_name: str) -> bool:
+
+        copy_source = {"Bucket": self.bucket_name, "Key": source_object_name}
+        try:
+            self.client.copy(copy_source, self.bucket_name,
+                             destination_object_name)
+            logging.info("Copied %s to %s", source_object_name,
+                         destination_object_name)
+
+            return True
+        except ClientError as e:
+            logging.error(
+                "Failed to copy file {} to {}: {}".format(
+                    source_object_name, destination_object_name, e
+                )
+            )
+
+            return False
+
+    def delete_file(self, file_path: str) -> bool:
+        try:
+            self.client.delete_object(Bucket=self.bucket_name, Key=file_path)
+            return True
+        except ClientError as e:
+            logging.error(f"Failed to delete file from S3: {e}")
+            return False
+
+    def file_exists(self, key: str) -> bool:
+        try:
+            self.client.head_object(Bucket=self.bucket_name, Key=key)
+            return True
+        except self.client.exceptions.ClientError as e:
+            if e.response["Error"]["Code"] == "404":
+                return False
+
+            raise
+
+    def get_file_size(self, key: str) -> int:
+        if not self.file_exists(key):
+            return 0
+
+        try:
+            response = self.client.head_object(
+                Bucket=self.bucket_name, Key=key)
+
+            return response["ContentLength"]
+        except self.client.exceptions.ClientError:
+            raise
+
+    def get_file_path(self, object_name: str):
+        if self.file_exists(object_name):
+            return f"https://{self.bucket_name}.s3.amazonaws.com/{object_name}"
+        return None
+
+    def get_file_url(self, object_name: str) -> Optional[str]:
+        try:
+            return f"https://{self.bucket_name}.s3.amazonaws.com/{object_name}"
+        except Exception as e:
+            logging.error(f"Failed to generate URL for {object_name}: {e}")
+            return None
+
+    def get_file_content(self, object_name: str) -> Optional[bytes]:
+
+        try:
+            response = self.client.get_object(
+                Bucket=self.bucket_name, Key=object_name)
+            return response["Body"].read()
+        except ClientError as e:
+            logging.error(
+                "Failed to fetch file %s: %s",
+                object_name,
+                e.response["Error"]["Message"],
+            )
+
+            return None
+
+    def upload_file(self, file_path: str, object_name: str) -> bool:
+
+        try:
+            self.client.upload_file(file_path, self.bucket_name, object_name)
+            logging.info(f"Uploaded {file_path} to {object_name}")
+            return True
+        except ClientError as e:
+            message = f"Failed to upload {file_path} to {object_name}: {e}"
+            logging.error(message)
+
+            return False
+
+    def upload_fileobj(
+        self, fileobj: BytesIO, object_name: str, content_type: str, acl: Optional[str] = None
+    ) -> bool:
+        try:
+            acl = acl or self.acl
+            self.client.upload_fileobj(
+                fileobj,
+                self.bucket_name,
+                object_name,
+                ExtraArgs={"ContentType": content_type, "ACL": acl},
+            )
+
+            logging.info(f"Uploaded file-like object to {object_name}")
+            return True
+        except ClientError as e:
+            logging.error(
+                "Failed to upload file-like object to %s: %s",
+                object_name,
+                e.response["Error"]["Message"],
+            )
+
+            return False
+
+    def get_file_metadata(self, object_name: str):
+        try:
+            response = self.client.head_object(
+                Bucket=self.bucket_name, Key=object_name)
+            metadata = {
+                "Size": response["ContentLength"],
+                "LastModified": response["LastModified"],
+                "ContentType": response["ContentType"],
+                "ETag": response["ETag"],
+            }
+            return metadata
+        except ClientError as e:
+            logging.error(f"Failed to get metadata for {object_name}: {e}")
+            return None
+
+
+s3_service = S3Service()

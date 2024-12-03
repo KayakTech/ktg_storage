@@ -1,10 +1,10 @@
-from ktg_storage.enums import FileUploadStorage
 from ktg_storage.utils import file_generate_upload_path
-from django.conf import settings
 from django.db import models
 from django.utils import timezone
 import uuid
 from django.contrib.auth import get_user_model
+from ktg_storage.client import s3_service
+from typing import Optional
 
 
 class FileManger(models.Manager):
@@ -56,6 +56,7 @@ class Storage(models.Model):
     file = models.FileField(
         upload_to=file_generate_upload_path, blank=True, null=True,
     )
+    thumbnail = models.URLField(blank=True, null=True)
 
     original_file_name = models.TextField()
 
@@ -75,8 +76,31 @@ class Storage(models.Model):
         return bool(self.upload_finished_at)
 
     @property
-    def url(self):
-        if settings.FILE_UPLOAD_STORAGE == FileUploadStorage.S3:
-            return self.attachment.url
+    def get_size(self) -> Optional[int]:
+        return s3_service.get_file_size(self.file_name)
 
-        return f"{settings.APP_DOMAIN}{self.attachment.url}"
+    @property
+    def generate_presigned_url(self, expires: bool = True) -> Optional[str]:
+        return s3_service.create_presigned_url(self.file_name, expires)
+
+    def delete_file(self) -> bool:
+        result = s3_service.delete_file(self.file_name)
+
+        if result:
+            self.file = None
+            self.thumbnail = None
+            self.save()
+
+        return result
+
+    @property
+    def file_exists(self) -> bool:
+        return s3_service.file_exists(self.file_name)
+
+    @property
+    def file_url(self):
+        return s3_service.get_file_url(self.file_name)
+
+    @property
+    def file_path(self) -> str:
+        return s3_service.get_file_path(self.file_name)

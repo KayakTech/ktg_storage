@@ -3,7 +3,7 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from typing_extensions import TypedDict
-from ktg_storage.client import create_presigned_url
+from ktg_storage.client import s3_service
 from django.contrib.auth import get_user_model
 
 from ktg_storage.models import Storage
@@ -50,7 +50,7 @@ class FileSerializer(serializers.ModelSerializer):
         if settings.IS_USING_LOCAL_STORAGE:
             return obj.file.url if obj.file else None
 
-        return create_presigned_url(obj.file.name)
+        return s3_service.create_presigned_url(obj.file.name)
 
 
 class StartDirectFileUploadSerializer(serializers.Serializer):
@@ -102,3 +102,4 @@ class FinishFileUploadSerializer(serializers.Serializer):
 
 class CreatePresignedUrl(serializers.Serializer):
     file_name = serializers.CharField()
+    expires = serializers.BooleanField(default=True)

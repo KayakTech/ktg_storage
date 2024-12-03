@@ -10,7 +10,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ktg_storage.client import create_presigned_url
+from ktg_storage.client import s3_service
 from ktg_storage.models import Storage
 from ktg_storage.services import FileDirectUploadService
 
@@ -56,9 +56,6 @@ class FileDirectUploadLocalApi(ApiAuthMixin, APIView):
         return Response({"id": file.id})
 
 
-# update file view
-
-
 class FileUpdateView(ApiAuthMixin, RetrieveUpdateDestroyAPIView):
     serializer_class = FileSerializer
 
@@ -85,8 +82,10 @@ class CreatePresignedUrl(ApiAuthMixin, CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         file_name = serializer.validated_data.get("file_name")
+        expires = serializer.validated_data.get("expires", True)
 
         return Response(
-            data=create_presigned_url(object_name=file_name),
+            data=s3_service.create_presigned_url(
+                object_name=file_name, expires=expires),
             status=status.HTTP_201_CREATED,
         )
