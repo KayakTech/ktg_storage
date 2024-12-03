@@ -5,7 +5,7 @@ from django.contrib import admin
 
 @admin.register(Storage)
 class AttachmentAdmin(admin.ModelAdmin):
-
+    date_hierarchy = 'created_at'
     list_display = [
         "original_file_name",
         "file_name",
@@ -16,3 +16,4 @@ class AttachmentAdmin(admin.ModelAdmin):
 
     ]
     list_display_links = ['original_file_name', 'thumbnail', 'uploaded_by']
+    list_filter = ['uploaded_by', 'file_type']
