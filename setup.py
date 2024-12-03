@@ -32,6 +32,7 @@ setup(
         "moviepy==1.0.3",
         "pillow==11.0.0",
         "PyMuPDF==1.24.14",
+        "python-magic==0.4.27",
     ],
     description='A reusable Django app for managing storage functionality',
 
