@@ -192,6 +192,8 @@ class FileDirectUploadService:
 
         file.full_clean()
         file.file_name = file.file.name
+
+        file.file_size = s3_service.get_file_size(file.file.name)
         thumbnail = create_thumbnail(file.file.name)
         file.thumbnail = s3_service.get_file_path(thumbnail)
 

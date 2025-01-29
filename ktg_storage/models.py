@@ -67,6 +67,7 @@ class Storage(models.Model):
     upload_finished_at = models.DateTimeField(blank=True, null=True)
     expire_at = models.DateTimeField(blank=True, null=True)
     reminder = models.DateTimeField(blank=True, null=True)
+    file_size = models.IntegerField(null=True, blank=True)
 
     @property
     def is_valid(self):
