@@ -17,6 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User()
+        ref_name = 'storage_user'
 
         exclude = ['groups', 'user_permissions', 'password']
 
