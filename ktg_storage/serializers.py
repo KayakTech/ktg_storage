@@ -8,6 +8,19 @@ from ktg_storage.client import s3_service
 from ktg_storage.models import Storage
 
 
+def User():
+    from django.contrib.auth import get_user_model
+    return get_user_model()
+
+
+class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User()
+
+        exclude = ['groups', 'user_permissions', 'password']
+
+
 class StorageValidatedData(TypedDict):
     file_name: str
     file_type: str
@@ -17,7 +30,7 @@ class StorageValidatedData(TypedDict):
 
 
 class FileSerializer(serializers.ModelSerializer):
-    uploaded_by = serializers.SerializerMethodField()
+    uploaded_by = UserSerializer()
     file = serializers.SerializerMethodField()
 
     class Meta:
@@ -30,13 +43,6 @@ class FileSerializer(serializers.ModelSerializer):
             "upload_finished_at",
             "uploaded_by",
         )
-
-    def get_uploaded_by(self, obj: Storage):
-        from django.contrib.auth import get_user_model
-
-        if not obj.uploaded_by:
-            return
-        return get_user_model().objects.filter(id=obj.uploaded_by.id).values()
 
     def update(self, instance: Storage, validated_data: dict):
 
